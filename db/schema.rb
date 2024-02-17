@@ -10,9 +10,38 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_17_145500) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_17_205844) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "bidders", force: :cascade do |t|
+    t.bigint "telegram_id"
+    t.string "first_name"
+    t.string "last_name"
+    t.string "username"
+    t.boolean "is_bot"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "bids", force: :cascade do |t|
+    t.bigint "bidder_id", null: false
+    t.bigint "lot_id", null: false
+    t.integer "amount"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bidder_id"], name: "index_bids_on_bidder_id"
+    t.index ["lot_id"], name: "index_bids_on_lot_id"
+  end
+
+  create_table "lots", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.integer "start_price"
+    t.integer "auction_duration"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
@@ -26,4 +55,6 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_145500) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "bids", "bidders"
+  add_foreign_key "bids", "lots"
 end
