@@ -54,4 +54,10 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Use memory store for bot sessions.
+  config.telegram_updates_controller.session_store = :memory_store
+
+  # Stub clients before processing routes.rb.
+  Telegram::Bot::ClientStub.stub_all!
 end

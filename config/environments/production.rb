@@ -83,4 +83,8 @@ Rails.application.configure do
   # ]
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+
+  # Configure session store for telegram bot.
+  config.telegram_updates_controller.session_store = :file_store,
+    Rails.root.join('tmp', 'session_store')
 end
