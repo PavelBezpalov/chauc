@@ -1,9 +1,15 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
+  before_action :set_active_lot
+
   def start!(*)
     Bidder.create_or_update(from)
-    respond_with :message, text: t('.content')
+    if @active_lot
+      respond_with :message, text: "#{@active_lot.name} on sale"
+    else
+      respond_with :message, text: "No active lots"
+    end
   end
 
   def help!(*)
@@ -102,5 +108,11 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       respond_with :message,
         text: t('telegram_webhooks.action_missing.command', command: action_options[:command])
     end
+  end
+
+  private
+
+  def set_active_lot
+    @active_lot = Lot.where(start_time: ..Time.current).where(end_time: Time.current..).first
   end
 end
