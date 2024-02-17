@@ -2,6 +2,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
   def start!(*)
+    Bidder.create_or_update(from)
     respond_with :message, text: t('.content')
   end
 

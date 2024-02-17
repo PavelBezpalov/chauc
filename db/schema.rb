@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_17_205844) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_17_211959) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_205844) do
     t.boolean "is_bot"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["telegram_id"], name: "index_bidders_on_telegram_id"
   end
 
   create_table "bids", force: :cascade do |t|
