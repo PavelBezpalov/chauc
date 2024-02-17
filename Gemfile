@@ -66,4 +66,5 @@ group :test do
 end
 
 gem "devise", git: "https://github.com/heartcombo/devise"
-gem 'dartsass-sprockets', '~> 3.1'
+gem "dartsass-sprockets", "~> 3.1"
+gem "rails_admin", git: "https://github.com/railsadminteam/rails_admin"

@@ -9,6 +9,18 @@ GIT
       responders
       warden (~> 1.2.3)
 
+GIT
+  remote: https://github.com/railsadminteam/rails_admin
+  revision: c6a403605658d797aed14f5d02462b9aa50f0df9
+  specs:
+    rails_admin (3.1.2)
+      activemodel-serializers-xml (>= 1.0)
+      csv
+      kaminari (>= 0.14, < 2.0)
+      nested_form (~> 0.3)
+      rails (>= 6.0, < 8)
+      turbo-rails (>= 1.0, < 3)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -66,6 +78,10 @@ GEM
       globalid (>= 0.3.6)
     activemodel (7.1.3)
       activesupport (= 7.1.3)
+    activemodel-serializers-xml (1.0.2)
+      activemodel (> 5.x)
+      activesupport (> 5.x)
+      builder (~> 3.1)
     activerecord (7.1.3)
       activemodel (= 7.1.3)
       activesupport (= 7.1.3)
@@ -107,6 +123,7 @@ GEM
     concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
     crass (1.0.6)
+    csv (3.2.8)
     dartsass-sprockets (3.1.0)
       railties (>= 4.0.0)
       sassc-embedded (~> 1.69)
@@ -142,6 +159,18 @@ GEM
     jbuilder (2.11.5)
       actionview (>= 5.0.0)
       activesupport (>= 5.0.0)
+    kaminari (1.2.2)
+      activesupport (>= 4.1.0)
+      kaminari-actionview (= 1.2.2)
+      kaminari-activerecord (= 1.2.2)
+      kaminari-core (= 1.2.2)
+    kaminari-actionview (1.2.2)
+      actionview
+      kaminari-core (= 1.2.2)
+    kaminari-activerecord (1.2.2)
+      activerecord
+      kaminari-core (= 1.2.2)
+    kaminari-core (1.2.2)
     loofah (2.22.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -156,6 +185,7 @@ GEM
     minitest (5.22.2)
     msgpack (1.7.2)
     mutex_m (0.2.0)
+    nested_form (0.3.2)
     net-imap (0.4.10)
       date
       net-protocol
@@ -309,6 +339,7 @@ DEPENDENCIES
   pg (~> 1.1)
   puma (>= 5.0)
   rails (~> 7.1.3)
+  rails_admin!
   selenium-webdriver
   sprockets-rails
   stimulus-rails
