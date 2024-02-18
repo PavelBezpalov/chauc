@@ -18,7 +18,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
         respond_with :message, **lot_response
       end
     else
-      respond_with :message, text: "No active lots",
+      respond_with :message, text: "Немає активних лотів.",
                    reply_markup: {
         inline_keyboard: [
           [ { text: 'Оновити', callback_data: 'reload' } ]
@@ -119,7 +119,7 @@ TEXT
     ]
     if @last_started_lot.end_time > Time.current
       menu_items.push(
-        [{ text: "Поставити #{next_bid_amount}", callback_data: 'raise' }]
+        [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{next_bid_amount}" }]
       )
     end
     if @bidder.owner? && @winning_bid && @last_started_lot.end_time < Time.current
