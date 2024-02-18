@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_02_17_220354) do
+ActiveRecord::Schema[7.1].define(version: 2024_02_18_115550) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,7 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_220354) do
     t.boolean "is_bot"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role", default: "user", null: false
     t.index ["telegram_id"], name: "index_bidders_on_telegram_id"
   end
 
@@ -45,6 +46,14 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_220354) do
     t.datetime "end_time"
   end
 
+  create_table "photos", force: :cascade do |t|
+    t.bigint "lot_id", null: false
+    t.text "image_data"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lot_id"], name: "index_photos_on_lot_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -53,10 +62,12 @@ ActiveRecord::Schema[7.1].define(version: 2024_02_17_220354) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "role", default: "guest", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
   add_foreign_key "bids", "bidders"
   add_foreign_key "bids", "lots"
+  add_foreign_key "photos", "lots"
 end

@@ -1,118 +1,132 @@
 class TelegramWebhooksController < Telegram::Bot::UpdatesController
   include Telegram::Bot::UpdatesController::MessageContext
 
-  before_action :set_active_lot
+  before_action :set_last_started_lot
+  before_action :set_bidder
+  before_action :set_winning_bid
 
   def start!(*)
-    Bidder.create_or_update(from)
-    if @active_lot
-      respond_with :message, text: "#{@active_lot.name} on sale"
+    if @last_started_lot
+      if @last_started_lot.photos.any?
+        respond_with :photo, photo: File.open(ImageUploader.storages[:store].path(@last_started_lot.photos.first.image.id)),
+                     caption: lot_text,
+                     parse_mode: "HTML",
+                     reply_markup: {
+                       inline_keyboard: lot_inline_keyboard
+                     }
+      else
+        respond_with :message, **lot_response
+      end
     else
-      respond_with :message, text: "No active lots"
-    end
-  end
-
-  def help!(*)
-    respond_with :message, text: t('.content')
-  end
-
-  def memo!(*args)
-    if args.any?
-      session[:memo] = args.join(' ')
-      respond_with :message, text: t('.notice')
-    else
-      respond_with :message, text: t('.prompt')
-      save_context :memo!
-    end
-  end
-
-  def remind_me!(*)
-    to_remind = session.delete(:memo)
-    reply = to_remind || t('.nothing')
-    respond_with :message, text: reply
-  end
-
-  def keyboard!(value = nil, *)
-    if value
-      respond_with :message, text: t('.selected', value: value)
-    else
-      save_context :keyboard!
-      respond_with :message, text: t('.prompt'), reply_markup: {
-        keyboard: [t('.buttons')],
-        resize_keyboard: true,
-        one_time_keyboard: true,
-        selective: true,
+      respond_with :message, text: "No active lots",
+                   reply_markup: {
+        inline_keyboard: [
+          [ { text: 'Оновити', callback_data: 'reload' } ]
+        ],
       }
     end
-  end
-
-  def inline_keyboard!(*)
-    respond_with :message, text: t('.prompt'), reply_markup: {
-      inline_keyboard: [
-        [
-          {text: t('.alert'), callback_data: 'alert'},
-          {text: t('.no_alert'), callback_data: 'no_alert'},
-        ],
-        [{text: t('.repo'), url: 'https://github.com/telegram-bot-rb/telegram-bot'}],
-      ],
-    }
   end
 
   def callback_query(data)
-    if data == 'alert'
-      answer_callback_query t('.alert'), show_alert: true
-    else
-      answer_callback_query t('.no_alert')
+    if data == 'reload'
+      answer_callback_query "Оновлено"
+    elsif data.start_with?('raise') && @last_started_lot
+      bid_amount = data.split(':').last.to_i
+      if @winning_bid && @winning_bid.amount >= bid_amount
+        answer_callback_query "Ваша ставка не прийнята."
+      else
+        @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
+        answer_callback_query "Ваша ставка прийнята"
+      end
     end
-  end
-
-  def inline_query(query, _offset)
-    query = query.first(10) # it's just an example, don't use large queries.
-    t_description = t('.description')
-    t_content = t('.content')
-    results = Array.new(5) do |i|
-      {
-        type: :article,
-        title: "#{query}-#{i}",
-        id: "#{query}-#{i}",
-        description: "#{t_description} #{i}",
-        input_message_content: {
-          message_text: "#{t_content} #{i}",
-        },
-      }
-    end
-    answer_inline_query results
-  end
-
-  # As there is no chat id in such requests, we can not respond instantly.
-  # So we just save the result_id, and it's available then with `/last_chosen_inline_result`.
-  def chosen_inline_result(result_id, _query)
-    session[:last_chosen_inline_result] = result_id
-  end
-
-  def last_chosen_inline_result!(*)
-    result_id = session[:last_chosen_inline_result]
-    if result_id
-      respond_with :message, text: t('.selected', result_id: result_id)
-    else
-      respond_with :message, text: t('.prompt')
-    end
-  end
-
-  def message(message)
-    respond_with :message, text: t('.content', text: message['text'])
-  end
-
-  def action_missing(action, *_args)
-    if action_type == :command
-      respond_with :message,
-        text: t('telegram_webhooks.action_missing.command', command: action_options[:command])
-    end
+    start!
   end
 
   private
 
-  def set_active_lot
-    @active_lot = Lot.where(start_time: ..Time.current).where(end_time: Time.current..).first
+  def set_last_started_lot
+    @last_started_lot = Lot.order(:id).where(start_time: ..Time.current).last
+  end
+
+  def set_bidder
+    @bidder = Bidder.create_or_update(from)
+  end
+
+  def set_winning_bid
+    @winning_bid =
+      if @last_started_lot
+        @last_started_lot.bids.order(:amount).last
+       else
+        nil
+      end
+  end
+
+  def lot_response
+    {
+      text: lot_text,
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: lot_inline_keyboard,
+      }
+    }
+  end
+
+  def lot_text
+<<-TEXT
+<b>#{@last_started_lot.name}</b>
+#{@last_started_lot.description}
+
+#{lot_time_text}
+
+#{lot_price_message}
+TEXT
+  end
+
+  def lot_time_text
+    if @last_started_lot.end_time > Time.current
+      "Ставки приймаються до #{@last_started_lot.end_time.in_time_zone("Europe/Kiev").to_formatted_s(:short)}"
+    else
+      "Аукціон закінчився."
+    end
+  end
+
+  def lot_price_message
+    if @winning_bid
+      message = "Виграшна ставка #{@winning_bid.amount} гривень. Всього #{@last_started_lot.bids.count} ставок."
+      if @winning_bid.bidder == @bidder
+        if @last_started_lot.end_time > Time.current
+          message + "\n<b>Ваша ставка виграє.</b>"
+        else
+          message + "\n<b>Ваша ставка перемогла! Продавець скоро зв'яжеться з вами.</b>"
+        end
+      end
+    else
+      "Стартова ціна #{@last_started_lot.start_price} гривень. Ставок немає."
+    end
+  end
+
+  def next_bid_amount
+    if @winning_bid
+      @winning_bid.amount + 100
+    else
+      @last_started_lot.start_price
+    end
+  end
+
+  def lot_inline_keyboard
+    menu_items = [
+      [{ text: 'Оновити', callback_data: 'reload' }]
+    ]
+    if @last_started_lot.end_time > Time.current
+      menu_items.push(
+        [{ text: "Поставити #{next_bid_amount}", callback_data: 'raise' }]
+      )
+    end
+    if @bidder.owner? && @winning_bid && @last_started_lot.end_time < Time.current
+      menu_items.push(
+        [{ text: "Написати переможцю", url: "tg://user?id=#{@winning_bid.bidder.telegram_id}" }]
+      )
+    end
+    menu_items
   end
 end
