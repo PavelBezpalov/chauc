@@ -20,10 +20,10 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     else
       respond_with :message, text: "Немає активних лотів.",
                    reply_markup: {
-        inline_keyboard: [
-          [ { text: 'Оновити', callback_data: 'reload' } ]
-        ],
-      }
+                     inline_keyboard: [
+                       [{ text: 'Оновити', callback_data: 'reload' }]
+                     ],
+                   }
     end
   end
 
@@ -33,10 +33,13 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data.start_with?('raise') && lot_bidding_active
       bid_amount = data.split(':').last.to_i
       if @winning_bid && @winning_bid.amount >= bid_amount
-        respond_with :message, "Не прийнята. Вже хтось запропонував більше."
+        respond_with :message, "Ваша ставка не прийнята. Вже хтось запропонував більше."
       else
+        if @winning_bid && @winning_bid.bidder != @bidder
+          send_message_to_last_winning_bidder
+        end
         @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
-        respond_with :message, text: "Прийнята."
+        respond_with :message, text: "Ваша ставка прийнята."
       end
     end
     start!
@@ -56,7 +59,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     @winning_bid =
       if @last_started_lot
         @last_started_lot.bids.order(:amount).last
-       else
+      else
         nil
       end
   end
@@ -72,14 +75,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
   end
 
   def lot_text
-<<-TEXT
+    <<-TEXT
 <b>#{@last_started_lot.name}</b>
 #{@last_started_lot.description}
 
 #{lot_time_text}
 
 #{lot_price_message}
-TEXT
+    TEXT
   end
 
   def lot_time_text
@@ -137,5 +140,22 @@ TEXT
 
   def lot_bidding_finished
     @last_started_lot && @last_started_lot.end_time < Time.current
+  end
+
+  def send_message_to_last_winning_bidder
+    last_winning_bidder_id = @winning_bid.bidder.telegram_id
+    bot.send_message chat_id: last_winning_bidder_id,
+                     text: 'Вашу ставку перебито.'
+    if @last_started_lot.photos.any?
+      bot.send_photo chat_id: last_winning_bidder_id,
+                     photo: File.open(ImageUploader.storages[:store].path(@last_started_lot.photos.first.image.id)),
+                     caption: lot_text,
+                     parse_mode: "HTML",
+                     reply_markup: {
+                       inline_keyboard: lot_inline_keyboard
+                     }
+    else
+      bot.send_message chat_id: last_winning_bidder_id, **lot_response
+    end
   end
 end
