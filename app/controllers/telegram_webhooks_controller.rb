@@ -29,14 +29,14 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def callback_query(data)
     if data == 'reload'
-      answer_callback_query "Оновлено"
-    elsif data.start_with?('raise') && @last_started_lot
+      respond_with :message, text: "Оновлено о #{Time.current.in_time_zone("Europe/Kiev").to_formatted_s(:short)}"
+    elsif data.start_with?('raise') && lot_bidding_active
       bid_amount = data.split(':').last.to_i
       if @winning_bid && @winning_bid.amount >= bid_amount
-        answer_callback_query "Не прийнята. Вже хтось запропонував більше."
+        respond_with :message, "Не прийнята. Вже хтось запропонував більше."
       else
         @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
-        answer_callback_query "Ваша ставка прийнята"
+        respond_with :message, text: "Прийнята."
       end
     end
     start!
@@ -83,7 +83,7 @@ TEXT
   end
 
   def lot_time_text
-    if @last_started_lot.end_time > Time.current
+    if lot_bidding_active
       "Ставки приймаються до #{@last_started_lot.end_time.in_time_zone("Europe/Kiev").to_formatted_s(:short)}"
     else
       "Аукціон закінчився."
@@ -94,7 +94,7 @@ TEXT
     if @winning_bid
       message = "Виграшна ставка #{@winning_bid.amount} гривень. Всього #{@last_started_lot.bids.count} ставок."
       if @winning_bid.bidder == @bidder
-        if @last_started_lot.end_time > Time.current
+        if lot_bidding_active
           message += "\n<b>Ваша ставка виграє.</b>"
         else
           message += "\n<b>Ваша ставка перемогла! Продавець скоро зв'яжеться з вами.</b>"
@@ -118,16 +118,24 @@ TEXT
     menu_items = [
       [{ text: 'Оновити', callback_data: 'reload' }]
     ]
-    if @bidder.user? && @last_started_lot.end_time > Time.current
+    if @bidder.user? && lot_bidding_active
       menu_items.push(
         [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{next_bid_amount}" }]
       )
     end
-    if @bidder.owner? && @winning_bid && @last_started_lot.end_time < Time.current
+    if @bidder.owner? && @winning_bid && lot_bidding_finished
       menu_items.push(
         [{ text: "Написати переможцю", url: "tg://user?id=#{@winning_bid.bidder.telegram_id}" }]
       )
     end
     menu_items
+  end
+
+  def lot_bidding_active
+    @last_started_lot && @last_started_lot.end_time > Time.current
+  end
+
+  def lot_bidding_finished
+    @last_started_lot && @last_started_lot.end_time < Time.current
   end
 end
