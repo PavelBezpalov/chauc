@@ -118,7 +118,7 @@ TEXT
     menu_items = [
       [{ text: 'Оновити', callback_data: 'reload' }]
     ]
-    if @last_started_lot.end_time > Time.current
+    if @bidder.user? && @last_started_lot.end_time > Time.current
       menu_items.push(
         [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{next_bid_amount}" }]
       )
