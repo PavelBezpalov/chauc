@@ -70,3 +70,10 @@ gem "dartsass-sprockets", "~> 3.1"
 gem "rails_admin", git: "https://github.com/railsadminteam/rails_admin"
 gem "telegram-bot"
 gem "shrine", "~> 3.5"
+
+group :development do
+  gem "capistrano", "~> 3.17", require: false
+  gem 'capistrano-rbenv', '~> 2.2', require: false
+  gem "capistrano-rails", "~> 1.6", require: false
+  gem "capistrano3-puma", require: false
+end
