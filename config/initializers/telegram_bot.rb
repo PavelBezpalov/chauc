@@ -1,3 +1,3 @@
-Telegram.bots_config = {
-  default: 'dummy'
-}
+# Telegram.bots_config = {
+#   default: 'dummy'
+# }
