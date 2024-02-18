@@ -85,7 +85,7 @@ Rails.application.configure do
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 
   # Set application domain, to be able to run `rake telegram:bot:set_webhook`
-  routes.default_url_options = { host: '70.34.253.44', protocol: 'http' }
+  routes.default_url_options = { host: '70.34.253.44', protocol: 'https' }
 
   # Configure session store for telegram bot.
   config.telegram_updates_controller.session_store = :file_store,
