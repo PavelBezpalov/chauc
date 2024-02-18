@@ -33,7 +33,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     elsif data.start_with?('raise') && @last_started_lot
       bid_amount = data.split(':').last.to_i
       if @winning_bid && @winning_bid.amount >= bid_amount
-        answer_callback_query "Ваша ставка не прийнята."
+        answer_callback_query "Не прийнята. Вже хтось запропонував більше."
       else
         @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
         answer_callback_query "Ваша ставка прийнята"
@@ -95,11 +95,12 @@ TEXT
       message = "Виграшна ставка #{@winning_bid.amount} гривень. Всього #{@last_started_lot.bids.count} ставок."
       if @winning_bid.bidder == @bidder
         if @last_started_lot.end_time > Time.current
-          message + "\n<b>Ваша ставка виграє.</b>"
+          message += "\n<b>Ваша ставка виграє.</b>"
         else
-          message + "\n<b>Ваша ставка перемогла! Продавець скоро зв'яжеться з вами.</b>"
+          message += "\n<b>Ваша ставка перемогла! Продавець скоро зв'яжеться з вами.</b>"
         end
       end
+      message
     else
       "Стартова ціна #{@last_started_lot.start_price} гривень. Ставок немає."
     end
