@@ -75,5 +75,5 @@ group :development do
   gem "capistrano", "~> 3.17", require: false
   gem 'capistrano-rbenv', '~> 2.2', require: false
   gem "capistrano-rails", "~> 1.6", require: false
-  gem "capistrano3-puma", require: false
+  gem 'capistrano3-puma', github: "seuros/capistrano-puma"
 end

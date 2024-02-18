@@ -4,6 +4,11 @@ lock "~> 3.18.0"
 set :application, "chauc"
 set :repo_url, "git@gitlab.com:PavelBezpalov/chauc.git"
 
+set :user, 'deploy'
+server "70.34.253.44", user: "#{fetch(:user)}", roles: %w{app db web}, primary: true
+
+set :branch, 'main'
+
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
 
@@ -18,7 +23,7 @@ set :deploy_to, "/home/#{fetch(:user)}/apps/#{fetch(:application)}"
 # set :format_options, command_output: true, log_file: "log/capistrano.log", color: :auto, truncate: :auto
 
 # Default value for :pty is false
-# set :pty, true
+set :pty, true
 
 # Default value for :linked_files is []
 append :linked_files, "config/database.yml", 'config/master.key'
