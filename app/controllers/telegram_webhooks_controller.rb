@@ -32,14 +32,19 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       respond_with :message, text: "Оновлено о #{Time.current.in_time_zone("Europe/Kiev").to_formatted_s(:short)}"
     elsif data.start_with?('raise') && lot_bidding_active
       bid_amount = data.split(':').last.to_i
-      if @winning_bid && @winning_bid.amount >= bid_amount
-        respond_with :message, "Ваша ставка не прийнята. Вже хтось запропонував більше."
-      else
-        if @winning_bid && @winning_bid.bidder != @bidder
-          send_message_to_last_winning_bidder
+      lot_id = data.split(':').second.to_i
+      if @last_started_lot.id == lot_id
+        if @winning_bid && @winning_bid.amount >= bid_amount
+          respond_with :message, "Ваша ставка не прийнята. Вже хтось запропонував більше."
+        else
+          if @winning_bid && @winning_bid.bidder != @bidder
+            send_message_to_last_winning_bidder
+          end
+          @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
+          respond_with :message, text: "Ваша ставка прийнята."
         end
-        @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
-        respond_with :message, text: "Ваша ставка прийнята."
+      else
+        respond_with :message, "Аукціон по цьому лоту вже закінчився."
       end
     end
     start!
@@ -123,7 +128,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     ]
     if @bidder.user? && lot_bidding_active
       menu_items.push(
-        [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{next_bid_amount}" }]
+        [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{@last_started_lot.id}:{#{next_bid_amount}" }]
       )
     end
     if @bidder.owner? && @winning_bid && lot_bidding_finished
