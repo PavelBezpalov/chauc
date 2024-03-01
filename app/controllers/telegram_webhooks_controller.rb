@@ -35,7 +35,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
       lot_id = data.split(':').second.to_i
       if @last_started_lot.id == lot_id
         if @winning_bid && @winning_bid.amount >= bid_amount
-          respond_with :message, "Ваша ставка не прийнята. Вже хтось запропонував більше."
+          respond_with :message, text: "Ваша ставка не прийнята. Вже хтось запропонував більше."
         else
           if @winning_bid && @winning_bid.bidder != @bidder
             send_message_to_last_winning_bidder
@@ -44,7 +44,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
           respond_with :message, text: "Ваша ставка прийнята."
         end
       else
-        respond_with :message, "Аукціон по цьому лоту вже закінчився."
+        respond_with :message, text: "Аукціон по цьому лоту вже закінчився."
       end
     end
     start!
