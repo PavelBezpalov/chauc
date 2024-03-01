@@ -128,7 +128,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     ]
     if @bidder.user? && lot_bidding_active
       menu_items.push(
-        [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{@last_started_lot.id}:{#{next_bid_amount}" }]
+        [{ text: "Поставити #{next_bid_amount}", callback_data: "raise:#{@last_started_lot.id}:#{next_bid_amount}" }]
       )
     end
     if @bidder.owner? && @winning_bid && lot_bidding_finished
