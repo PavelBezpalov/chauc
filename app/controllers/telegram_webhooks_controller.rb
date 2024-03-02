@@ -31,20 +31,29 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
     if data == 'reload'
       respond_with :message, text: "Оновлено о #{Time.current.in_time_zone("Europe/Kiev").to_formatted_s(:short)}"
     elsif data.start_with?('raise') && lot_bidding_active
-      bid_amount = data.split(':').last.to_i
-      lot_id = data.split(':').second.to_i
-      if @last_started_lot.id == lot_id
-        if @winning_bid && @winning_bid.amount >= bid_amount
-          respond_with :message, text: "Ваша ставка не прийнята. Вже хтось запропонував більше."
-        else
-          if @winning_bid && @winning_bid.bidder != @bidder
-            send_message_to_last_winning_bidder
-          end
-          @winning_bid = Bid.create(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
-          respond_with :message, text: "Ваша ставка прийнята."
-        end
+      if @bidder.owner?
+        respond_with :message, text: "Власник аукціону не може робити ставки."
       else
-        respond_with :message, text: "Аукціон по цьому лоту вже закінчився."
+        bid_amount = data.split(':').last.to_i
+        lot_id = data.split(':').second.to_i
+        if @last_started_lot.id == lot_id
+          if @winning_bid && @winning_bid.amount >= bid_amount
+            respond_with :message, text: "Ваша ставка не прийнята. Вже хтось запропонував більше."
+          else
+            new_bid = Bid.new(bidder: @bidder, lot: @last_started_lot, amount: bid_amount)
+            if new_bid.save
+              if @winning_bid && @winning_bid.bidder != @bidder
+                send_message_to_last_winning_bidder
+              end
+              @winning_bid = new_bid
+              respond_with :message, text: "Ваша ставка прийнята."
+            else
+              respond_with :message, text: "Ваша ставка не прийнята. Зверніться до адміністратора."
+            end
+          end
+        else
+          respond_with :message, text: "Аукціон по цьому лоту вже закінчився."
+        end
       end
     end
     start!
@@ -116,7 +125,7 @@ class TelegramWebhooksController < Telegram::Bot::UpdatesController
 
   def next_bid_amount
     if @winning_bid
-      @winning_bid.amount + 100
+      @winning_bid.amount + @last_started_lot.bid_step
     else
       @last_started_lot.start_price
     end
